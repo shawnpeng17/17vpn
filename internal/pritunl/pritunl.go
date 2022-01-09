@@ -48,6 +48,14 @@ func (p *Pritunl) Connections() map[string]Connection {
 	return conns
 }
 
+func (p *Pritunl) Connect(id, password string) {
+	p.gotunl.ConnectProfile(id, "pritunl", password)
+}
+
+func (p *Pritunl) Disconnect(id string) {
+	p.gotunl.DisconnectProfile(id)
+}
+
 func (p *Pritunl) DisconnectAll() {
 	p.gotunl.StopConnections()
 }

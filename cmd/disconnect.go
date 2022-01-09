@@ -10,8 +10,7 @@ import (
 )
 
 var disconnectCmd = &cobra.Command{
-	Use:     "disconnectAll",
-	Aliases: []string{"d"},
+	Use:     "d",
 	Short:   "Disconnect all connections",
 	Run: func(cmd *cobra.Command, args []string) {
 		p := pritunl.New()
