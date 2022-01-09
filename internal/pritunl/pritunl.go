@@ -47,3 +47,7 @@ func (p *Pritunl) Connections() map[string]Connection {
 	_ = json.Unmarshal([]byte(connStr), &conns)
 	return conns
 }
+
+func (p *Pritunl) DisconnectAll() {
+	p.gotunl.StopConnections()
+}
