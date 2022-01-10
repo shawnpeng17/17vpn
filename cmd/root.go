@@ -85,7 +85,7 @@ var rootCmd = &cobra.Command{
 		color.Yellow("Connecting %s...", targetProfile.Server)
 		p.Connect(targetProfile.ID, password())
 
-		timeout := time.NewTimer(time.Minute)
+		timeout := time.NewTimer(30 * time.Second)
 
 	Loop:
 		for {
@@ -103,7 +103,7 @@ var rootCmd = &cobra.Command{
 					color.Red("Connect %s failed!", targetProfile.Server)
 					break Loop
 				}
-				time.Sleep(time.Second)
+				time.Sleep(500 * time.Millisecond)
 			}
 		}
 	},
