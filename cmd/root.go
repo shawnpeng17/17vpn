@@ -1,11 +1,11 @@
 package cmd
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/AlecAivazis/survey/v2"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
@@ -16,6 +16,11 @@ var rootCmd = &cobra.Command{
 	Use:   "17vpn",
 	Short: "17vpn tool",
 	Run: func(cmd *cobra.Command, args []string) {
+		if err := initConfig(); err != nil {
+			color.Red(err.Error())
+			return
+		}
+
 		p := pritunl.New()
 		profiles := p.Profiles()
 		conns := p.Connections()
@@ -25,9 +30,21 @@ var rootCmd = &cobra.Command{
 			return
 		}
 
+		var options []string
+		for _, profile := range profiles {
+			options = append(options, profile.Server)
+		}
 		var id string
-		_, _ = color.New(color.FgYellow).Print("Enter ID or Server: ")
-		_, _ = fmt.Scanln(&id)
+		prompt := &survey.Select{
+			Message:       "Choose a Server",
+			Options:       options,
+			Default:       "",
+			VimMode:       true,
+		}
+		if err := survey.AskOne(prompt, &id); err != nil {
+			color.Red(err.Error())
+			return
+		}
 
 		if id == "" {
 			return
@@ -59,12 +76,14 @@ var rootCmd = &cobra.Command{
 			if _, ok := conns[profile.ID]; ok {
 				color.White("Disconnecting %s...", profile.Server)
 				p.Disconnect(profile.ID)
+				time.Sleep(time.Second)
 			}
 		}
 
+
 		// connect target profile
 		color.Yellow("Connecting %s...", targetProfile.Server)
-		p.Connect(targetProfile.ID, "password")
+		p.Connect(targetProfile.ID, password())
 
 		timeout := time.NewTimer(time.Minute)
 

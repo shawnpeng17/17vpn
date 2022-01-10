@@ -4,15 +4,68 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/AlecAivazis/survey/v2"
 	"github.com/fatih/color"
 	"github.com/olekukonko/tablewriter"
+	"github.com/spf13/viper"
+	"github.com/xlzd/gotp"
 
 	"github.com/shawnpeng17/17vpn/internal/pritunl"
 )
+
+const (
+	configFileName = ".17vpn.yaml"
+)
+
+type answer struct {
+	Key string
+	Pin string
+}
+
+func initConfig() error {
+	home, _ := os.UserHomeDir()
+	path := filepath.Join(home, configFileName)
+	viper.SetConfigFile(path)
+
+	if err := viper.ReadInConfig(); err == nil {
+		return nil
+	}
+
+	var qs = []*survey.Question{
+		{
+			Name:   "key",
+			Prompt: &survey.Password{Message: "Enter OTP key"},
+		},
+		{
+			Name:   "pin",
+			Prompt: &survey.Password{Message: "Enter Pin"},
+		},
+	}
+	var ans answer
+	if err := survey.Ask(qs, &ans); err != nil {
+		return err
+	}
+
+	viper.Set("key", ans.Key)
+	viper.Set("pin", ans.Pin)
+	viper.SetConfigFile(path)
+	if err := viper.WriteConfig(); err != nil {
+		return err
+	}
+
+	color.Yellow("Config saved to %s\n\n", viper.ConfigFileUsed())
+	return nil
+}
+
+func password() string {
+	totp := gotp.NewDefaultTOTP(viper.GetString("key"))
+	return viper.GetString("pin") + totp.Now()
+}
 
 func list(profiles []pritunl.Profile, conns map[string]pritunl.Connection) error {
 	if len(profiles) == 0 {
@@ -48,7 +101,6 @@ func list(profiles []pritunl.Profile, conns map[string]pritunl.Connection) error
 
 	return nil
 }
-
 
 func formatStatus(status string) string {
 	status = strings.ToUpper(status)
