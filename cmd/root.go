@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -23,7 +22,7 @@ var rootCmd = &cobra.Command{
 
 		if err := list(profiles, conns); err != nil {
 			color.Yellow(err.Error())
-			os.Exit(1)
+			return
 		}
 
 		var id string
@@ -36,57 +35,58 @@ var rootCmd = &cobra.Command{
 
 		// check profile exist
 		var targetProfile pritunl.Profile
-		isActionConnect := false
+		isActionDisconnect := false
 		for i, profile := range profiles {
 			if strconv.Itoa(i+1) == id || strings.ToUpper(id) == profile.Server {
 				targetProfile = profile
-				isActionConnect = conns[profile.ID].Status != "connected"
+				isActionDisconnect = conns[profile.ID].Status == "connected"
 				break
 			}
 		}
 		if targetProfile == (pritunl.Profile{}) {
 			color.Red("Profile not exists!")
-			os.Exit(1)
-		}
-
-		if isActionConnect {
-			// disconnect all connection
-			for _, profile := range profiles {
-				if _, ok := conns[profile.ID]; ok {
-					color.White("Disconnecting %s...", profile.Server)
-					p.Disconnect(profile.ID)
-				}
-			}
-
-			color.Yellow("Connecting %s...", targetProfile.Server)
-			p.Connect(targetProfile.ID, "password")
-
-			timeout := time.NewTimer(time.Minute)
-
-		Loop:
-			for {
-				select {
-				case <-timeout.C:
-					color.Red("Connect %s timeout!", targetProfile.Server)
-					break Loop
-				default:
-					status := p.Connections()[targetProfile.ID].Status
-					switch status {
-					case "connected":
-						color.Green("Connect %s completed!", targetProfile.Server)
-						break Loop
-					case "":
-						color.Red("Connect %s failed!", targetProfile.Server)
-						break Loop
-					}
-					time.Sleep(time.Second)
-				}
-			}
 			return
 		}
 
-		color.White("Disconnecting %s...", targetProfile.Server)
-		p.Disconnect(targetProfile.ID)
+		if isActionDisconnect {
+			color.White("Disconnecting %s...", targetProfile.Server)
+			p.Disconnect(targetProfile.ID)
+			return
+		}
+
+		// disconnect all connection
+		for _, profile := range profiles {
+			if _, ok := conns[profile.ID]; ok {
+				color.White("Disconnecting %s...", profile.Server)
+				p.Disconnect(profile.ID)
+			}
+		}
+
+		// connect target profile
+		color.Yellow("Connecting %s...", targetProfile.Server)
+		p.Connect(targetProfile.ID, "password")
+
+		timeout := time.NewTimer(time.Minute)
+
+	Loop:
+		for {
+			select {
+			case <-timeout.C:
+				color.Red("Connect %s timeout!", targetProfile.Server)
+				break Loop
+			default:
+				status := p.Connections()[targetProfile.ID].Status
+				switch status {
+				case "connected":
+					color.Green("Connect %s completed!", targetProfile.Server)
+					break Loop
+				case "":
+					color.Red("Connect %s failed!", targetProfile.Server)
+					break Loop
+				}
+				time.Sleep(time.Second)
+			}
+		}
 	},
 }
 
@@ -97,6 +97,6 @@ func init() {
 
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		os.Exit(1)
+		return
 	}
 }

@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"os"
-
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
@@ -17,7 +15,7 @@ var listCmd = &cobra.Command{
 
 		if err := list(p.Profiles(), p.Connections()); err != nil {
 			color.Yellow(err.Error())
-			os.Exit(1)
+			return
 		}
 	},
 }

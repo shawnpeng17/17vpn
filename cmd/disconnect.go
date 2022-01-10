@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"os"
-
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
@@ -17,7 +15,7 @@ var disconnectCmd = &cobra.Command{
 		conns := p.Connections()
 		if len(conns) == 0 {
 			color.Yellow("No connection found!")
-			os.Exit(1)
+			return
 		}
 
 		p.DisconnectAll()
