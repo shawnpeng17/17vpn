@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -30,16 +31,16 @@ var rootCmd = &cobra.Command{
 			return
 		}
 
+		fmt.Println()
+
 		var options []string
 		for _, profile := range profiles {
 			options = append(options, profile.Server)
 		}
 		var id string
-		prompt := &survey.Select{
-			Message:       "Choose a Server",
-			Options:       options,
+		prompt := &survey.Input{
+			Message:       "Enter ID or Server",
 			Default:       "",
-			VimMode:       true,
 		}
 		if err := survey.AskOne(prompt, &id); err != nil {
 			color.Red(err.Error())
