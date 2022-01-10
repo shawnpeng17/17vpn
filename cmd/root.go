@@ -61,16 +61,26 @@ var rootCmd = &cobra.Command{
 			color.Yellow("Connecting %s...", targetProfile.Server)
 			p.Connect(targetProfile.ID, "password")
 
+			timeout := time.NewTimer(time.Minute)
+
+		Loop:
 			for {
-				status := p.Connections()[targetProfile.ID].Status
-				if status == "connected" {
-					color.Green("Connecting %s completed!", targetProfile.Server)
-					break
-				} else if status == "" {
-					color.Red("Connecting %s failed!", targetProfile.Server)
-					break
+				select {
+				case <-timeout.C:
+					color.Red("Connect %s timeout!", targetProfile.Server)
+					break Loop
+				default:
+					status := p.Connections()[targetProfile.ID].Status
+					switch status {
+					case "connected":
+						color.Green("Connect %s completed!", targetProfile.Server)
+						break Loop
+					case "":
+						color.Red("Connect %s failed!", targetProfile.Server)
+						break Loop
+					}
+					time.Sleep(time.Second)
 				}
-				time.Sleep(time.Second)
 			}
 			return
 		}
