@@ -1,9 +1,23 @@
 # 17vpn
 
-https://user-images.githubusercontent.com/91862792/148804740-7c2e5d14-ac9e-4454-b0a9-a8e3a9b3b224.mov
+![image](https://user-images.githubusercontent.com/91862792/172811759-851153ee-8e76-4e77-a45a-a11504dce767.png)
 
 ## Installation
 
+### Binary
+
+Download the pre-built binaries from the Releases page. Extract them, move it to your $PATH.
+
+
+```shell
+curl -OL https://github.com/shawnpeng17/17vpn/releases/download/v1.0.0/17vpn_1.0.0_Darwin_x86_64.tar.gz
+tar -xzvf 17vpn_1.0.0_Darwin_x86_64.tar.gz
+mv golab /usr/local/bin
+17vpn
+```
+
+
+### Source
 ```shell
 git clone git@github.com:shawnpeng17/17vpn.git
 cd 17vpn
