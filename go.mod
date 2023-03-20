@@ -9,6 +9,7 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/spf13/cobra v1.3.0
 	github.com/spf13/viper v1.10.0
+	github.com/xlzd/gotp v0.0.0-20220110052318-fab697c03c2c
 )
 
 require (
@@ -33,7 +34,6 @@ require (
 	github.com/tidwall/match v1.0.1 // indirect
 	github.com/tidwall/pretty v1.0.1 // indirect
 	github.com/tidwall/sjson v1.1.1 // indirect
-	github.com/xlzd/gotp v0.0.0-20220110052318-fab697c03c2c // indirect
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
 	golang.org/x/sys v0.0.0-20211205182925-97ca703d548d // indirect
 	golang.org/x/term v0.0.0-20210503060354-a79de5458b56 // indirect
