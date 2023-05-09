@@ -8,10 +8,11 @@ import (
 )
 
 var serverOrder = map[string]int{
-	"DEV":   1,
-	"ALPHA": 2,
-	"STA":   3,
-	"PROD":  4,
+	"DEV":     1,
+	"ALPHA":   2,
+	"PREPROD": 3,
+	"STA":     4,
+	"PROD":    5,
 }
 
 type Pritunl struct {
@@ -30,10 +31,11 @@ func (p *Pritunl) Profiles() []Profile {
 		var conf Conf
 		_ = json.Unmarshal([]byte(profile.Conf), &conf)
 		profiles = append(profiles, Profile{
-			ID:     id,
-			Path:   profile.Path,
-			Server: conf.Server,
-			User:   conf.User,
+			ID:           id,
+			Path:         profile.Path,
+			Server:       conf.Server,
+			User:         conf.User,
+			PasswordMode: conf.PasswordMode,
 		})
 	}
 	sort.Slice(profiles, func(i, j int) bool {
