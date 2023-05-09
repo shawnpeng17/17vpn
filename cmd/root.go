@@ -84,7 +84,7 @@ var rootCmd = &cobra.Command{
 
 		// connect target profile
 		color.Yellow("Connecting %s...", targetProfile.Server)
-		p.Connect(targetProfile.ID, password())
+		p.Connect(targetProfile.ID, password(targetProfile.PasswordMode))
 
 		timeout := time.NewTimer(30 * time.Second)
 

@@ -62,9 +62,13 @@ func initConfig() error {
 	return nil
 }
 
-func password() string {
-	totp := gotp.NewDefaultTOTP(viper.GetString("key"))
-	return viper.GetString("pin") + totp.Now()
+func password(mode string) string {
+	password := viper.GetString("pin")
+	if mode == "otp_pin" {
+		totp := gotp.NewDefaultTOTP(viper.GetString("key"))
+		password += totp.Now()
+	}
+	return password
 }
 
 func list(profiles []pritunl.Profile, conns map[string]pritunl.Connection) error {
