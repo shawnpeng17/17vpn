@@ -12,7 +12,7 @@ Download the pre-built binaries from the Releases page. Extract them, move it to
 ```shell
 curl -OL https://github.com/shawnpeng17/17vpn/releases/download/v1.0.0/17vpn_1.0.0_Darwin_x86_64.tar.gz
 tar -xzvf 17vpn_1.0.0_Darwin_x86_64.tar.gz
-mv golab /usr/local/bin
+mv 17vpn /usr/local/bin
 17vpn
 ```
 
