@@ -4,7 +4,7 @@
 
 ## Installation
 
-Follow the https://17media.atlassian.net/wiki/spaces/H/pages/1027244286/OKTA+Pritunl+VPN install Pritunl client and import profile first.
+Follow the [confluence](https://17media.atlassian.net/wiki/spaces/H/pages/1027244286/OKTA+Pritunl+VPN) install Pritunl client and import profiles
 
 ### Binary
 
