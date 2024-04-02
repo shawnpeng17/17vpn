@@ -21,5 +21,5 @@ mv 17vpn /usr/local/bin
 ```shell
 git clone git@github.com:shawnpeng17/17vpn.git
 cd 17vpn
-go install
+go install # install it to your $GOPATH/bin
 ```
