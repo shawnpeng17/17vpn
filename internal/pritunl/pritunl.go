@@ -8,10 +8,10 @@ import (
 )
 
 var serverOrder = map[string]int{
-	"DEV":   1,
-	"ALPHA": 2,
-	"STA":   3,
-	"PROD":  4,
+	"DEV":     1,
+	"ALPHA":   2,
+	"PREPROD": 3,
+	"PROD":    4,
 }
 
 type Pritunl struct {
