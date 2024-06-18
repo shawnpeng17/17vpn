@@ -14,8 +14,8 @@ Follow the [confluence](https://17media.atlassian.net/wiki/spaces/H/pages/102724
 Download the pre-built binaries from the Releases page. Extract them, move it to your $PATH.
 
 ```shell
-curl -OL https://github.com/shawnpeng17/17vpn/releases/download/v1.0.0/17vpn_1.0.0_Darwin_x86_64.tar.gz
-tar -xzvf 17vpn_1.0.0_Darwin_x86_64.tar.gz
+curl -OL https://github.com/shawnpeng17/17vpn/releases/download/v1.2.0/17vpn_1.2.0_Darwin_arm_64.tar.gz
+tar -xzvf 17vpn_1.2.0_Darwin_arm_64.tar.gz
 mv 17vpn /usr/local/bin
 17vpn
 ```
