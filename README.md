@@ -1,7 +1,6 @@
 # 17vpn
 
-![image](https://user-images.githubusercontent.com/91862792/172811759-851153ee-8e76-4e77-a45a-a11504dce767.png)
-
+<img width="520" height="295" alt="image" src="https://github.com/user-attachments/assets/07a1511e-cc1a-4ce1-9be8-888077d2a198" />
 
 ### Pre-Installation
 
