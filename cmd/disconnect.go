@@ -8,17 +8,24 @@ import (
 )
 
 var disconnectCmd = &cobra.Command{
-	Use:     "d",
-	Short:   "Disconnect all connections",
+	Use:   "d",
+	Short: "Disconnect all connections",
 	Run: func(cmd *cobra.Command, args []string) {
 		p := pritunl.New()
-		conns := p.Connections()
+		conns, err := p.Connections()
+		if err != nil {
+			color.Yellow(err.Error())
+			return
+		}
 		if len(conns) == 0 {
 			color.Yellow("No connection found!")
 			return
 		}
 
-		p.DisconnectAll()
+		if err := p.DisconnectAll(); err != nil {
+			color.Yellow(err.Error())
+			return
+		}
 		color.Green("All connections disconnected!")
 	},
 }

@@ -2,61 +2,65 @@ package pritunl
 
 import (
 	"encoding/json"
-	"sort"
-
-	"github.com/cghdev/gotunl/pkg/gotunl"
 )
 
-var serverOrder = map[string]int{
-	"DEV":     1,
-	"ALPHA":   2,
-	"PREPROD": 3,
-	"PROD":    4,
-}
-
 type Pritunl struct {
-	gotunl *gotunl.Gotunl
+	daemon *daemon
 }
 
 func New() *Pritunl {
 	return &Pritunl{
-		gotunl: gotunl.New(),
+		daemon: newDaemon(),
 	}
 }
 
 func (p *Pritunl) Profiles() []Profile {
-	var profiles []Profile
-	for id, profile := range p.gotunl.Profiles {
-		var conf Conf
-		_ = json.Unmarshal([]byte(profile.Conf), &conf)
-		profiles = append(profiles, Profile{
-			ID:     id,
-			Path:   profile.Path,
-			Server: conf.Server,
-			User:   conf.User,
-		})
+	return loadProfiles()
+}
+
+func (p *Pritunl) Connections() (map[string]Connection, error) {
+	body, err := p.daemon.do("GET", "profile", "")
+	if err != nil {
+		return nil, err
 	}
-	sort.Slice(profiles, func(i, j int) bool {
-		return serverOrder[profiles[i].Server] < serverOrder[profiles[j].Server]
-	})
-	return profiles
-}
-
-func (p *Pritunl) Connections() map[string]Connection {
 	var conns map[string]Connection
-	connStr := p.gotunl.GetConnections()
-	_ = json.Unmarshal([]byte(connStr), &conns)
-	return conns
+	if err := json.Unmarshal([]byte(body), &conns); err != nil {
+		return nil, err
+	}
+	return conns, nil
 }
 
-func (p *Pritunl) Connect(id, password string) {
-	p.gotunl.ConnectProfile(id, "pritunl", password)
+func (p *Pritunl) Connect(id, password string) error {
+	ovpn, err := profilePayload(id)
+	if err != nil {
+		return err
+	}
+	payload := map[string]interface{}{
+		"id":        id,
+		"reconnect": true,
+		"timeout":   true,
+		"username":  "pritunl",
+		"password":  password,
+		"data":      ovpn,
+	}
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+	_, err = p.daemon.do("POST", "profile", string(data))
+	return err
 }
 
-func (p *Pritunl) Disconnect(id string) {
-	p.gotunl.DisconnectProfile(id)
+func (p *Pritunl) Disconnect(id string) error {
+	data, err := json.Marshal(map[string]string{"id": id})
+	if err != nil {
+		return err
+	}
+	_, err = p.daemon.do("DELETE", "profile", string(data))
+	return err
 }
 
-func (p *Pritunl) DisconnectAll() {
-	p.gotunl.StopConnections()
+func (p *Pritunl) DisconnectAll() error {
+	_, err := p.daemon.do("POST", "stop", "")
+	return err
 }

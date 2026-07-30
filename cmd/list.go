@@ -8,12 +8,17 @@ import (
 )
 
 var listCmd = &cobra.Command{
-	Use:     "ls",
-	Short:   "List profiles",
+	Use:   "ls",
+	Short: "List profiles",
 	Run: func(cmd *cobra.Command, args []string) {
 		p := pritunl.New()
 
-		if err := list(p.Profiles(), p.Connections()); err != nil {
+		conns, err := p.Connections()
+		if err != nil {
+			color.Yellow(err.Error())
+			return
+		}
+		if err := list(p.Profiles(), conns); err != nil {
 			color.Yellow(err.Error())
 			return
 		}

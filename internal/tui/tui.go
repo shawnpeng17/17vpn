@@ -27,8 +27,11 @@ const (
 type PasswordFunc func() string
 
 type (
-	tickMsg           time.Time
-	connectionsMsg    map[string]pritunl.Connection
+	tickMsg        time.Time
+	connectionsMsg struct {
+		conns map[string]pritunl.Connection
+		err   error
+	}
 	connectIssuedMsg  struct{ id, server string }
 	disconnectDoneMsg struct{ server string }
 )
@@ -104,7 +107,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tickMsg:
 		return m, m.fetchConnections
 	case connectionsMsg:
-		m.conns = msg
+		if msg.err != nil {
+			// A transient daemon hiccup (e.g. an idle socket closed with EOF):
+			// keep the last known state and keep polling instead of crashing.
+			return m, tick(m.pollInterval())
+		}
+		m.conns = msg.conns
 		m.evaluatePending()
 		return m, tick(m.pollInterval())
 	case connectIssuedMsg:
@@ -196,7 +204,8 @@ func (m model) handleEnter() (tea.Model, tea.Cmd) {
 }
 
 func (m model) fetchConnections() tea.Msg {
-	return connectionsMsg(m.p.Connections())
+	conns, err := m.p.Connections()
+	return connectionsMsg{conns: conns, err: err}
 }
 
 func tick(d time.Duration) tea.Cmd {
