@@ -18,6 +18,11 @@ const (
 	connectTimeout = 30 * time.Second
 	failGrace      = 3 * time.Second
 
+	// unreachableAfter is how many consecutive failed polls we tolerate before
+	// warning the user; each poll already retries internally, so this many
+	// misses means the daemon is genuinely unresponsive rather than blipping.
+	unreachableAfter = 3
+
 	colServer = 12
 	colStatus = 18
 	colConn   = 12
@@ -42,9 +47,10 @@ var (
 	labelStyle    = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("6")) // cyan
 	detailBorder  = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color("8")).Padding(0, 1)
 	helpStyle     = lipgloss.NewStyle().Faint(true)
-	infoStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("3"))            // yellow
-	successStyle  = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("2")) // green
-	errStyle      = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("1")) // red
+	infoStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("3"))             // yellow
+	successStyle  = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("2"))  // green
+	errStyle      = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("1"))  // red
+	warnStyle     = lipgloss.NewStyle().Faint(true).Foreground(lipgloss.Color("3")) // dim yellow
 )
 
 type model struct {
@@ -60,6 +66,10 @@ type model struct {
 	pendingSrv   string
 	pendingStart time.Time
 	deadline     time.Time
+
+	// fetchFails counts consecutive failed connection polls; the last known
+	// state is held on screen until the daemon responds again.
+	fetchFails int
 
 	quitting bool
 }
@@ -110,8 +120,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.err != nil {
 			// A transient daemon hiccup (e.g. an idle socket closed with EOF):
 			// keep the last known state and keep polling instead of crashing.
+			m.fetchFails++
 			return m, tick(m.pollInterval())
 		}
+		m.fetchFails = 0
 		m.conns = msg.conns
 		m.evaluatePending()
 		return m, tick(m.pollInterval())
@@ -140,6 +152,10 @@ func (m model) View() string {
 	b.WriteString("\n\n")
 	if m.message != "" {
 		b.WriteString(m.message)
+		b.WriteString("\n")
+	}
+	if m.fetchFails >= unreachableAfter {
+		b.WriteString(warnStyle.Render("⚠ pritunl daemon not responding — showing last known state (retrying…)"))
 		b.WriteString("\n")
 	}
 	b.WriteString(helpStyle.Render("↑/↓ or j/k move · enter connect/disconnect · q quit"))
