@@ -20,8 +20,9 @@ mv 17vpn /usr/local/bin
 ```
 
 2. Source
+
+install it to your $GOPATH/bin
 ```shell
-# install it to your $GOPATH/bin
 go install github.com/shawnpeng17/17vpn@v1.3.0 
 ```
 
