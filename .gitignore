@@ -1,0 +1,21 @@
+# Binaries
+/17vpn
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Release artifacts
+*.tar.gz
+*.zip
+
+# Test binary and coverage
+*.test
+*.out
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
