@@ -5,7 +5,6 @@ go 1.26
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.2
 	github.com/cghdev/gotunl v0.0.0-20200702180023-cda8ecb78ea5
-	github.com/charmbracelet/bubbles v1.0.0
 	github.com/charmbracelet/bubbletea v1.3.10
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/fatih/color v1.13.0

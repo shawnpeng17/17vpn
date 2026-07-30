@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
@@ -18,6 +17,10 @@ const (
 	fastInterval   = 500 * time.Millisecond
 	connectTimeout = 30 * time.Second
 	failGrace      = 3 * time.Second
+
+	colServer = 12
+	colStatus = 18
+	colConn   = 12
 )
 
 // PasswordFunc returns the password (PIN + OTP) used to connect a profile.
@@ -31,12 +34,14 @@ type (
 )
 
 var (
-	titleStyle   = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("87"))
-	detailStyle  = lipgloss.NewStyle().Faint(true)
-	helpStyle    = lipgloss.NewStyle().Faint(true)
-	infoStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("229"))
-	successStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("42"))
-	errStyle     = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("196"))
+	titleStyle    = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("87"))
+	headerStyle   = lipgloss.NewStyle().Bold(true).Faint(true)
+	selectedStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("87"))
+	detailStyle   = lipgloss.NewStyle().Faint(true)
+	helpStyle     = lipgloss.NewStyle().Faint(true)
+	infoStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("229"))
+	successStyle  = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("42"))
+	errStyle      = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("196"))
 )
 
 type model struct {
@@ -44,7 +49,7 @@ type model struct {
 	password PasswordFunc
 	profiles []pritunl.Profile
 	conns    map[string]pritunl.Connection
-	table    table.Model
+	cursor   int
 	message  string
 
 	// pending tracks a connection attempt awaiting its result.
@@ -63,31 +68,12 @@ func Run(p *pritunl.Pritunl, password PasswordFunc) error {
 		return errors.New("No profile found in Pritunl!")
 	}
 
-	columns := []table.Column{
-		{Title: "Server", Width: 10},
-		{Title: "Status", Width: 18},
-		{Title: "Connected", Width: 12},
-	}
-	t := table.New(
-		table.WithColumns(columns),
-		table.WithFocused(true),
-		table.WithHeight(len(profiles)),
-	)
-	st := table.DefaultStyles()
-	st.Header = st.Header.Bold(true).BorderBottom(true)
-	st.Selected = st.Selected.Bold(true).
-		Foreground(lipgloss.Color("229")).
-		Background(lipgloss.Color("57"))
-	t.SetStyles(st)
-
 	m := model{
 		p:        p,
 		password: password,
 		profiles: profiles,
 		conns:    map[string]pritunl.Connection{},
-		table:    t,
 	}
-	m.refreshRows()
 
 	_, err := tea.NewProgram(m).Run()
 	return err
@@ -104,6 +90,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "q", "ctrl+c":
 			m.quitting = true
 			return m, tea.Quit
+		case "up", "k":
+			if m.cursor > 0 {
+				m.cursor--
+			}
+		case "down", "j":
+			if m.cursor < len(m.profiles)-1 {
+				m.cursor++
+			}
 		case "enter":
 			return m.handleEnter()
 		}
@@ -111,7 +105,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, m.fetchConnections
 	case connectionsMsg:
 		m.conns = msg
-		m.refreshRows()
 		m.evaluatePending()
 		return m, tick(m.pollInterval())
 	case connectIssuedMsg:
@@ -124,11 +117,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.message = infoStyle.Render(fmt.Sprintf("Disconnected %s", msg.server))
 		return m, m.fetchConnections
 	}
-
-	// Arrow keys and everything else drive the table's cursor.
-	var cmd tea.Cmd
-	m.table, cmd = m.table.Update(msg)
-	return m, cmd
+	return m, nil
 }
 
 func (m model) View() string {
@@ -139,27 +128,65 @@ func (m model) View() string {
 	var b strings.Builder
 	b.WriteString(titleStyle.Render("17vpn"))
 	b.WriteString("\n\n")
-	b.WriteString(m.table.View())
-	b.WriteString("\n\n")
+	b.WriteString(m.listView())
+	b.WriteString("\n")
 	b.WriteString(m.detailView())
 	b.WriteString("\n\n")
 	if m.message != "" {
 		b.WriteString(m.message)
 		b.WriteString("\n")
 	}
-	b.WriteString(helpStyle.Render("↑/↓ move · enter connect/disconnect · q quit"))
+	b.WriteString(helpStyle.Render("↑/↓ or j/k move · enter connect/disconnect · q quit"))
 	b.WriteString("\n")
 	return b.String()
+}
+
+func (m model) listView() string {
+	var b strings.Builder
+	b.WriteString("  ")
+	b.WriteString(headerStyle.Render(cell("SERVER", colServer) + cell("STATUS", colStatus) + cell("CONNECTED", colConn)))
+	b.WriteString("\n")
+
+	for i, prof := range m.profiles {
+		status := "disconnected"
+		connected := ""
+		if c, ok := m.conns[prof.ID]; ok {
+			if c.Status != "" {
+				status = c.Status
+			}
+			if c.Timestamp > 0 {
+				connected = formatDuration(time.Since(time.Unix(c.Timestamp, 0)))
+			}
+		}
+
+		pointer := "  "
+		server := prof.Server
+		if i == m.cursor {
+			pointer = selectedStyle.Render("▶ ")
+			server = selectedStyle.Render(server)
+		}
+
+		b.WriteString(pointer)
+		b.WriteString(cell(server, colServer))
+		b.WriteString(cell(statusBadge(status), colStatus))
+		b.WriteString(cell(connected, colConn))
+		b.WriteString("\n")
+	}
+	return b.String()
+}
+
+// cell pads (or truncates) a possibly-styled string to a fixed visible width.
+func cell(s string, w int) string {
+	return lipgloss.NewStyle().Width(w).Render(s)
 }
 
 // handleEnter toggles the selected profile: disconnect it if connected,
 // otherwise disconnect every other connection and connect it.
 func (m model) handleEnter() (tea.Model, tea.Cmd) {
-	idx := m.table.Cursor()
-	if idx < 0 || idx >= len(m.profiles) {
+	if m.cursor < 0 || m.cursor >= len(m.profiles) {
 		return m, nil
 	}
-	target := m.profiles[idx]
+	target := m.profiles[m.cursor]
 
 	if m.conns[target.ID].Status == "connected" {
 		m.message = infoStyle.Render(fmt.Sprintf("Disconnecting %s...", target.Server))
@@ -244,30 +271,11 @@ func (m model) pollInterval() time.Duration {
 	return idleInterval
 }
 
-func (m *model) refreshRows() {
-	rows := make([]table.Row, 0, len(m.profiles))
-	for _, prof := range m.profiles {
-		status := "disconnected"
-		connected := ""
-		if c, ok := m.conns[prof.ID]; ok {
-			if c.Status != "" {
-				status = c.Status
-			}
-			if c.Timestamp > 0 {
-				connected = formatDuration(time.Since(time.Unix(c.Timestamp, 0)))
-			}
-		}
-		rows = append(rows, table.Row{prof.Server, statusBadge(status), connected})
-	}
-	m.table.SetRows(rows)
-}
-
 func (m model) detailView() string {
-	idx := m.table.Cursor()
-	if idx < 0 || idx >= len(m.profiles) {
+	if m.cursor < 0 || m.cursor >= len(m.profiles) {
 		return ""
 	}
-	prof := m.profiles[idx]
+	prof := m.profiles[m.cursor]
 
 	client, server := "-", "-"
 	if c, ok := m.conns[prof.ID]; ok {
