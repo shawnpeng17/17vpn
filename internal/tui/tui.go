@@ -34,14 +34,14 @@ type (
 )
 
 var (
-	titleStyle    = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("87"))
-	headerStyle   = lipgloss.NewStyle().Bold(true).Faint(true)
-	selectedStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("87"))
-	detailStyle   = lipgloss.NewStyle().Faint(true)
+	headerStyle   = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("4")) // blue
+	selectedStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("6")) // cyan
+	labelStyle    = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("6")) // cyan
+	detailBorder  = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color("8")).Padding(0, 1)
 	helpStyle     = lipgloss.NewStyle().Faint(true)
-	infoStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("229"))
-	successStyle  = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("42"))
-	errStyle      = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("196"))
+	infoStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("3"))            // yellow
+	successStyle  = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("2")) // green
+	errStyle      = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("1")) // red
 )
 
 type model struct {
@@ -126,8 +126,6 @@ func (m model) View() string {
 	}
 
 	var b strings.Builder
-	b.WriteString(titleStyle.Render("17vpn"))
-	b.WriteString("\n\n")
 	b.WriteString(m.listView())
 	b.WriteString("\n")
 	b.WriteString(m.detailView())
@@ -287,19 +285,26 @@ func (m model) detailView() string {
 		}
 	}
 
-	content := fmt.Sprintf("User:      %s\nClient IP: %s\nServer IP: %s", prof.User, client, server)
-	return detailStyle.Render(content)
+	row := func(label, val string) string {
+		return labelStyle.Render(fmt.Sprintf("%-10s", label)) + val
+	}
+	content := strings.Join([]string{
+		row("User", prof.User),
+		row("Client IP", client),
+		row("Server IP", server),
+	}, "\n")
+	return detailBorder.Render(content)
 }
 
 func statusBadge(status string) string {
 	upper := strings.ToUpper(status)
 	switch upper {
 	case "CONNECTED":
-		return lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("42")).Render(upper)
+		return lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("2")).Render(upper) // green
 	case "CONNECTING":
-		return lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("229")).Render(upper + "...")
+		return lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("3")).Render(upper + "...") // yellow
 	case "DISCONNECTING":
-		return lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("244")).Render(upper + "...")
+		return lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("8")).Render(upper + "...") // gray
 	case "DISCONNECTED":
 		return lipgloss.NewStyle().Faint(true).Render(upper)
 	default:
