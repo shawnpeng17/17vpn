@@ -104,12 +104,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.quitting = true
 			return m, tea.Quit
 		case "up", "k":
-			if m.cursor > 0 {
-				m.cursor--
+			if n := len(m.profiles); n > 0 {
+				m.cursor = (m.cursor - 1 + n) % n
 			}
 		case "down", "j":
-			if m.cursor < len(m.profiles)-1 {
-				m.cursor++
+			if n := len(m.profiles); n > 0 {
+				m.cursor = (m.cursor + 1) % n
 			}
 		case "enter":
 			return m.handleEnter()
