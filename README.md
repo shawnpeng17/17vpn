@@ -13,8 +13,8 @@ Follow the [confluence](https://17media.atlassian.net/wiki/spaces/H/pages/102724
 Download the pre-built binaries from the Releases page. Extract them, move it to your $PATH.
 
 ```shell
-curl -OL https://github.com/shawnpeng17/17vpn/releases/download/v1.3.1/17vpn_1.3.1_darwin_arm64.tar.gz
-tar -xzvf 17vpn_1.3.1_darwin_arm64.tar.gz
+curl -OL https://github.com/shawnpeng17/17vpn/releases/download/v1.4.0/17vpn_1.4.0_darwin_arm64.tar.gz
+tar -xzvf 17vpn_1.4.0_darwin_arm64.tar.gz
 mv 17vpn /usr/local/bin
 17vpn
 ```
@@ -23,7 +23,7 @@ mv 17vpn /usr/local/bin
 
 install it to your $GOPATH/bin
 ```shell
-go install github.com/shawnpeng17/17vpn@v1.3.1 
+go install github.com/shawnpeng17/17vpn@v1.4.0 
 ```
 
 ### Usage
