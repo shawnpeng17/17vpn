@@ -59,8 +59,10 @@ func loadProfiles() []Profile {
 }
 
 // profilePayload returns the .ovpn contents for a profile, with the macOS
-// keychain secret appended — the payload the Pritunl service expects on
-// connect.
+// keychain secret appended when present. Most profiles have their key
+// embedded directly in the .ovpn file and never get a keychain entry — the
+// keychain is only populated when Pritunl's client syncs a profile update
+// that omits the key, so a missing entry is normal and not an error.
 func profilePayload(id string) (string, error) {
 	ovpn, err := os.ReadFile(filepath.Join(profilesDir(), id+".ovpn"))
 	if err != nil {
@@ -70,14 +72,11 @@ func profilePayload(id string) (string, error) {
 
 	if runtime.GOOS == "darwin" {
 		out, err := exec.Command("security", "find-generic-password", "-w", "-s", "pritunl", "-a", id).Output()
-		if err != nil {
-			return "", err
+		if err == nil {
+			if key, err := base64.StdEncoding.DecodeString(strings.TrimSpace(string(out))); err == nil {
+				payload += "\n" + string(key)
+			}
 		}
-		key, err := base64.StdEncoding.DecodeString(strings.TrimSpace(string(out)))
-		if err != nil {
-			return "", err
-		}
-		payload += "\n" + string(key)
 	}
 	return payload, nil
 }
