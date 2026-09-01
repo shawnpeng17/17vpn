@@ -12,8 +12,8 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/fatih/color"
 	"github.com/olekukonko/tablewriter"
+	"github.com/pquerna/otp/totp"
 	"github.com/spf13/viper"
-	"github.com/xlzd/gotp"
 
 	"github.com/shawnpeng17/17vpn/internal/pritunl"
 )
@@ -62,9 +62,12 @@ func initConfig() error {
 	return nil
 }
 
-func password() string {
-	totp := gotp.NewDefaultTOTP(viper.GetString("key"))
-	return viper.GetString("pin") + totp.Now()
+func password() (string, error) {
+	code, err := totp.GenerateCode(viper.GetString("key"), time.Now())
+	if err != nil {
+		return "", fmt.Errorf("generate OTP: %w", err)
+	}
+	return viper.GetString("pin") + code, nil
 }
 
 func list(profiles []pritunl.Profile, conns map[string]pritunl.Connection) error {

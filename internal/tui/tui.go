@@ -29,7 +29,7 @@ const (
 )
 
 // PasswordFunc returns the password (PIN + OTP) used to connect a profile.
-type PasswordFunc func() string
+type PasswordFunc func() (string, error)
 
 type (
 	tickMsg        time.Time
@@ -37,7 +37,10 @@ type (
 		conns map[string]pritunl.Connection
 		err   error
 	}
-	connectIssuedMsg  struct{ id, server string }
+	connectIssuedMsg  struct {
+		id, server string
+		err        error
+	}
 	disconnectDoneMsg struct{ server string }
 )
 
@@ -128,6 +131,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.evaluatePending()
 		return m, tick(m.pollInterval())
 	case connectIssuedMsg:
+		if msg.err != nil {
+			m.message = errStyle.Render(fmt.Sprintf("Connect %s failed: %v", msg.server, msg.err))
+			return m, m.fetchConnections
+		}
 		m.pendingID = msg.id
 		m.pendingSrv = msg.server
 		m.pendingStart = time.Now()
@@ -245,7 +252,13 @@ func (m model) connectCmd(target pritunl.Profile) tea.Cmd {
 				time.Sleep(time.Second)
 			}
 		}
-		p.Connect(target.ID, pass())
+		password, err := pass()
+		if err != nil {
+			return connectIssuedMsg{server: target.Server, err: err}
+		}
+		if err := p.Connect(target.ID, password); err != nil {
+			return connectIssuedMsg{server: target.Server, err: err}
+		}
 		return connectIssuedMsg{id: target.ID, server: target.Server}
 	}
 }
